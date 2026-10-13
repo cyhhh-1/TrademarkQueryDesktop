@@ -1,0 +1,48 @@
+# Python
+worker/.venv/
+worker/.pytest_cache/
+worker/build/
+worker/dist/
+worker/**/*.egg-info/
+**/__pycache__/
+*.py[cod]
+
+# Node / Vue
+apps/desktop/node_modules/
+apps/desktop/dist/
+apps/desktop/.vite/
+
+# Rust / Tauri
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/resources/worker/
+
+# Local runtime data and employee files
+.local/
+tasks/
+edge-profile/
+*.xlsx
+*.xls
+*.png.tmp
+
+# Editors and operating system
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+
+# Dependencies, local artifacts and credentials
+**/node_modules/
+worker/.python311/
+worker/.python311-embed.zip
+release/
+outputs/
+deliverables/
+home-development-package/
+diagnostics/
+.learnings/
+.env
+.env.*
+!.env.example
+*.pem
+*.key

@@ -1,0 +1,2 @@
+"""Microsoft Edge session support."""
+

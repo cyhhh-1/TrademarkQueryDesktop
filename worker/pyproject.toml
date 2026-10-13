@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=80.9.0", "wheel>=0.45.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trademark-query-worker"
+version = "0.1.29"
+description = "Local worker for CNIPA trademark workbook queries"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "openpyxl==3.1.5",
+  "Pillow==12.3.0",
+  "rapidocr==3.9.2",
+  "playwright==1.62.0",
+  "pywinauto==0.6.9",
+  "pydantic==2.13.5",
+  "websocket-client==1.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pyinstaller==6.22.2",
+  "pytest==9.1.1",
+]
+
+[project.scripts]
+trademark-worker = "trademark_worker.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -1,0 +1,24 @@
+:root {
+  color-scheme: light;
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", sans-serif;
+  font-synthesis: none;
+  --color-bg: #ffffff;
+  --color-surface-subtle: #f6f8fb;
+  --color-border: #d9e1ea;
+  --color-text: #10213a;
+  --color-text-muted: #5e6c80;
+  --color-primary: #0b73e0;
+  --color-primary-hover: #0864c5;
+  --color-success: #12a45a;
+  --color-warning: #f4a000;
+  --color-warning-bg: #fff8e8;
+  --color-danger: #d7463f;
+  --radius-control: 8px;
+  --shadow-focus: 0 0 0 3px rgba(11, 115, 224, 0.24);
+}
+
+* { box-sizing: border-box; }
+html, body, #app { width: 100%; min-width: 1100px; height: 100%; min-height: 720px; margin: 0; }
+body { color: var(--color-text); background: var(--color-bg); overflow: hidden; }
+button, input { font: inherit; }
+button { color: inherit; }
