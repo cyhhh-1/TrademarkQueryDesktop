@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trademark-query-worker"
-version = "0.1.29"
+version = "0.1.30"
 description = "Local worker for CNIPA trademark workbook queries"
 requires-python = ">=3.11,<3.12"
 dependencies = [

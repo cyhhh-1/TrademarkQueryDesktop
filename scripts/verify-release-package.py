@@ -25,7 +25,7 @@ def parse_checksums(path: Path) -> dict[str, str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Verify the final desktop release bundle.")
     parser.add_argument("release_dir", type=Path)
-    parser.add_argument("--version", default="0.1.29")
+    parser.add_argument("--version", default="0.1.30")
     parser.add_argument("--include-manual", action="store_true")
     args = parser.parse_args()
 

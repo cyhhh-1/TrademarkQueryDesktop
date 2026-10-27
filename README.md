@@ -4,7 +4,7 @@
 
 员工手动完成网站登录和验证码，启动任务后可以继续使用其他软件；客户端负责展示逐行进度、重试情况和查询结果。
 
-**当前源码版本：0.1.29。** 本说明按当前代码及项目相关需求、排障、迭代记录整理。GitHub 仓库保存的是移除真实 API 密钥后的源码快照，不包含本机安装包、业务 Excel、浏览器登录资料和历史任务数据。自行构建后，需要在“模型设置”中填写自己的 API Key，才能使用远程图片识别兜底。
+**当前源码版本：0.1.30。** 本说明按当前代码及项目相关需求、排障、迭代记录整理。GitHub 仓库保存的是移除真实 API 密钥后的源码快照，不包含本机安装包、业务 Excel、浏览器登录资料和历史任务数据。自行构建后，需要在“模型设置”中填写自己的 API Key，才能使用远程图片识别兜底。
 
 ## 目录
 
@@ -350,7 +350,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke-test.ps1
 当前版本安装包输出位置：
 
 ```text
-apps/desktop/src-tauri/target/release/bundle/nsis/商标查询助手_0.1.29_x64-setup.exe
+apps/desktop/src-tauri/target/release/bundle/nsis/商标查询助手_0.1.30_x64-setup.exe
 ```
 
 安装包 `.exe` 会安装桌面主程序、Worker 和所需资源，不能只复制主程序 `.exe` 就当作完整应用。升级前应关闭旧版，并确认没有残留 `trademark-worker.exe` 占用安装文件。
