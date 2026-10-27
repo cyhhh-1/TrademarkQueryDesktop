@@ -14,6 +14,7 @@ pub fn run() {
             worker::worker_send,
             worker::worker_stop,
             files::pick_xlsx,
+            files::save_template,
             files::save_output_as,
             files::open_task_folder,
             files::clear_login_session,

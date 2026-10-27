@@ -28,7 +28,7 @@ if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
     throw "Staged Worker executable not found: $executable"
 }
 $version = & $executable --version
-if ($LASTEXITCODE -ne 0 -or $version.Trim() -ne '0.1.29') {
+if ($LASTEXITCODE -ne 0 -or $version.Trim() -ne '0.1.30') {
     throw "Staged Worker version check failed: $version"
 }
 

@@ -132,6 +132,7 @@ def capture_full_page_image(page: Any) -> Image.Image:
 def detail_evidence_crop_box(
     *,
     table_bounds: Sequence[Mapping[str, float]],
+    header_bounds: Mapping[str, float] | None,
     content_bottom: float,
     image_width: int,
     image_height: int,
@@ -139,13 +140,22 @@ def detail_evidence_crop_box(
 ) -> tuple[int, int, int, int]:
     """Keep the CNIPA detail record and status, without browser edges or footer."""
     scale = image_width / max(1, document_width)
-    left = max(0, round((min(item["x"] for item in table_bounds) - 95) * scale))
-    right = min(
-        image_width,
-        round((max(item["x"] + item["width"] for item in table_bounds) + 20) * scale),
-    )
-    bottom = min(image_height, round((content_bottom + 10) * scale))
-    return left, 0, right, bottom
+    if header_bounds and float(header_bounds.get("width", 0)) > 0:
+        left = max(0, round(float(header_bounds.get("x", 0)) * scale))
+        top = max(0, round(float(header_bounds.get("y", 0)) * scale))
+        right = min(
+            image_width,
+            round(
+                (float(header_bounds.get("x", 0)) + float(header_bounds["width"]))
+                * scale
+            ),
+        )
+    else:
+        # A full-width fallback retains all evidence if CNIPA changes the
+        # header markup and the blue information bar cannot be located.
+        left, top, right = 0, 0, image_width
+    bottom = min(image_height, round(content_bottom * scale))
+    return left, top, right, bottom
 
 
 def detail_image_is_complete(image: Image.Image) -> bool:
@@ -742,16 +752,25 @@ class BackgroundPagePort:
         raise RuntimeError(f"商标详情截图不完整，刷新重试后仍失败：{last_error}")
 
     def _wait_for_detail_capture_ready(self) -> None:
-        """Wait for required detail fields/images and a stable content height."""
+        """Wait for required detail fields, goods/services, images, and stability."""
         deadline = time.monotonic() + 35
-        last_signature: tuple[str, int] | None = None
+        last_signature: tuple[str, str, int] | None = None
         stable_since: float | None = None
         while time.monotonic() < deadline:
             self._check_site()
             state = self.page.evaluate(
-                """() => {
+                r"""() => {
                     const body = document.body?.innerText || '';
                     const root = document.querySelector('.xqbox') || document.body;
+                    const serviceStart = body.indexOf('商品/服务');
+                    const groupStart = serviceStart >= 0
+                        ? body.indexOf('类似群', serviceStart + '商品/服务'.length)
+                        : -1;
+                    const serviceText = serviceStart >= 0 && groupStart > serviceStart
+                        ? body.slice(serviceStart + '商品/服务'.length, groupStart)
+                            .replace(/查看详细信息/g, '').replace(/\s+/g, '')
+                        : '';
+                    const serviceReady = serviceText.length >= 2;
                     const images = [...root.querySelectorAll('img')].filter(img => {
                         const r = img.getBoundingClientRect();
                         return r.width > 20 && r.height > 20;
@@ -765,22 +784,30 @@ class BackgroundPagePort:
                     return {
                         ready: body.includes('申请/注册号') && body.includes('申请人名称') &&
                                body.includes('专用权期限') && body.includes('商标状态') &&
+                               serviceReady &&
                                images.every(img => img.complete && img.naturalWidth > 0) && !loading,
+                        serviceReady,
+                        serviceText,
                         text: body.slice(0, 3000),
                         height: Math.round(root?.getBoundingClientRect().height || 0)
                     };
                 }"""
             )
             now = time.monotonic()
-            signature = (str(state.get("text") or ""), int(state.get("height") or 0))
-            if state.get("ready") and signature == last_signature:
+            signature = (
+                str(state.get("text") or ""),
+                str(state.get("serviceText") or ""),
+                int(state.get("height") or 0),
+            )
+            detail_ready = bool(state.get("ready") and state.get("serviceReady"))
+            if detail_ready and signature == last_signature:
                 if stable_since is not None and now - stable_since >= 0.6:
                     return
             else:
                 last_signature = signature
-                stable_since = now if state.get("ready") else None
+                stable_since = now if detail_ready else None
             self.page.wait_for_timeout(150)
-        raise RuntimeError("商标详情必要字段或图片未完整加载")
+        raise RuntimeError("商标详情商品/服务、必要字段或图片未完整加载")
 
     def _capture_detail_image(self) -> Image.Image:
         image = capture_full_page_image(self.page)
@@ -791,12 +818,39 @@ class BackgroundPagePort:
             )
             if bounds:
                 document_width = self._document_width()
-                content_bottom = self.page.locator(".xqbox").evaluate(
-                    "e => {const r=e.getBoundingClientRect();return r.bottom+scrollY}"
-                ) if self.page.locator(".xqbox").count() else image.height * document_width / image.width
+                evidence_bounds = self.page.evaluate(
+                    r"""() => {
+                        const visibleRect = element => {
+                            const r = element.getBoundingClientRect();
+                            const s = getComputedStyle(element);
+                            return r.width > 400 && r.height > 10 &&
+                                s.display !== 'none' && s.visibility !== 'hidden';
+                        };
+                        const headers = [...document.querySelectorAll('body *')]
+                            .filter(element => {
+                                const text = (element.innerText || '').replace(/\s+/g, '');
+                                return text.includes('CNIPA.GOV.CN') &&
+                                    text.includes('当前数据截至') && visibleRect(element);
+                            })
+                            .map(element => {
+                                const r = element.getBoundingClientRect();
+                                return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height};
+                            })
+                            .sort((a, b) => (a.width * a.height) - (b.width * b.height));
+                        const detail = document.querySelector('.xqbox');
+                        const detailRect = detail?.getBoundingClientRect();
+                        return {
+                            header: headers[0] || null,
+                            contentBottom: detailRect
+                                ? detailRect.bottom + scrollY
+                                : document.documentElement.scrollHeight
+                        };
+                    }"""
+                )
                 crop = detail_evidence_crop_box(
                     table_bounds=bounds,
-                    content_bottom=content_bottom,
+                    header_bounds=evidence_bounds.get("header"),
+                    content_bottom=float(evidence_bounds["contentBottom"]),
                     image_width=image.width,
                     image_height=image.height,
                     document_width=document_width,

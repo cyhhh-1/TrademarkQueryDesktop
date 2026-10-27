@@ -20,7 +20,9 @@ export interface DesktopService {
   startWorker(): Promise<void>
   stopWorker(): Promise<void>
   listen(handler: (event: WorkerEvent) => void): Promise<() => void>
+  listenFileDrop(handler: (paths: string[]) => void): Promise<() => void>
   pickXlsx(): Promise<string | null>
+  downloadTemplate(kind: 'application' | 'uniqueness'): Promise<string | null>
   send(command: Record<string, unknown>): Promise<void>
   saveOutputAs(source: string, input?: string): Promise<string | null>
   loadModelSettings(): Promise<ModelSettingsState>
@@ -48,8 +50,18 @@ class TauriDesktopService implements DesktopService {
     return listenEvent<WorkerEvent>('worker-event', (event) => handler(event.payload))
   }
 
+  async listenFileDrop(handler: (paths: string[]) => void): Promise<() => void> {
+    return getCurrentWindow().onDragDropEvent((event) => {
+      if (event.payload.type === 'drop') handler(event.payload.paths)
+    })
+  }
+
   async pickXlsx(): Promise<string | null> {
     return invoke<string | null>('pick_xlsx')
+  }
+
+  async downloadTemplate(kind: 'application' | 'uniqueness'): Promise<string | null> {
+    return invoke<string | null>('save_template', { kind })
   }
 
   async send(command: Record<string, unknown>): Promise<void> {
@@ -98,7 +110,15 @@ class PreviewDesktopService implements DesktopService {
     }
   }
 
+  async listenFileDrop(): Promise<() => void> {
+    return () => undefined
+  }
+
   async pickXlsx(): Promise<string | null> {
+    return null
+  }
+
+  async downloadTemplate(): Promise<string | null> {
     return null
   }
 

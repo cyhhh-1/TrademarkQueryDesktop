@@ -49,7 +49,7 @@ const submit = () => {
 </script>
 
 <template>
-  <div class="settings-backdrop" role="presentation" @click.self="emit('close')">
+  <div class="settings-backdrop" role="presentation">
     <section
       class="settings-dialog"
       role="dialog"
@@ -118,7 +118,7 @@ const submit = () => {
             恢复公司默认
           </button>
           <span class="settings-action-spacer" />
-          <button type="button" class="button" :disabled="saving" @click="emit('close')">取消</button>
+          <button type="button" class="button" data-testid="model-settings-cancel" :disabled="saving" @click="emit('close')">取消</button>
           <button
             type="submit"
           class="button primary"

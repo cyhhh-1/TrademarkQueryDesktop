@@ -34,7 +34,7 @@ if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
 }
 
 $version = & $executable --version
-if ($LASTEXITCODE -ne 0 -or $version.Trim() -ne '0.1.29') {
+if ($LASTEXITCODE -ne 0 -or $version.Trim() -ne '0.1.30') {
     throw "Worker version check failed: $version"
 }
 

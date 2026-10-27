@@ -181,8 +181,8 @@ class LocalMarkRecognizer:
     def _clearly_different(observed: str, expected: str) -> bool:
         if not observed or not expected or observed == expected:
             return False
-        # Fuzzy searches commonly return extensions such as 抖音商城 or
-        # 抖音月付. A stable strict extension is unambiguously another mark.
+        # Fuzzy searches commonly return extensions such as 云杉商城 or
+        # 云杉月付. A stable strict extension is unambiguously another mark.
         if expected in observed and len(observed) > len(expected):
             return True
         return LocalMarkRecognizer._edit_distance(observed, expected) >= 2

@@ -156,7 +156,7 @@ def test_logged_in_header_identity_excludes_public_navigation_text() -> None:
     ):
         assert not is_logged_in_header_name(value)
 
-    assert is_logged_in_header_name("钱家卫")
+    assert is_logged_in_header_name("测试用户")
 
 
 class _SearchInvoke:
@@ -293,7 +293,7 @@ def test_scroll_offset_maps_uia_percent_to_document_pixels() -> None:
 def test_detail_labels_from_rows_maps_each_label_to_following_cell() -> None:
     rows = [
         ["申请/注册号", "66227440", "申请日期", "2022年07月27日", "国际分类", "36"],
-        ["申请人名称（中文）", "北京字跳网络技术有限公司"],
+        ["申请人名称（中文）", "北京云杉网络技术有限公司"],
         ["专用权期限", "2023年08月28日 至 2033年08月27日", "商标形式", ""],
         ["商标状态图标", "", "LIVE/REGISTRATION/Issued and Active", "注册商标"],
     ]
@@ -301,7 +301,7 @@ def test_detail_labels_from_rows_maps_each_label_to_following_cell() -> None:
     labels = detail_labels_from_rows(rows)
 
     assert labels["申请/注册号"] == "66227440"
-    assert labels["申请人名称（中文）"] == "北京字跳网络技术有限公司"
+    assert labels["申请人名称（中文）"] == "北京云杉网络技术有限公司"
     assert labels["专用权期限"] == "2023年08月28日 至 2033年08月27日"
     assert labels["商标状态"] == "LIVE/REGISTRATION/Issued and Active 注册商标"
 

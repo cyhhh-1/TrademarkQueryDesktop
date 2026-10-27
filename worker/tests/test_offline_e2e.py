@@ -17,8 +17,8 @@ class OfflineClient:
             "66227440",
             "36",
             "2022年07月27日",
-            "抖音月付",
-            "北京字跳网络技术有限公司",
+            "云杉月付",
+            "北京云杉网络技术有限公司",
             row_index=0,
         )
         self.uniqueness = [
@@ -27,8 +27,8 @@ class OfflineClient:
                 "93296493",
                 "35",
                 "2026年08月03日",
-                "美团",
-                "北京三快科技有限公司",
+                "青禾",
+                "北京青禾科技有限公司",
                 row_index=0,
             ),
             ResultRecord(
@@ -36,14 +36,14 @@ class OfflineClient:
                 "93296492",
                 "25",
                 "2026年08月03日",
-                "美团",
-                "北京三快科技有限公司",
+                "青禾",
+                "北京青禾科技有限公司",
                 row_index=1,
             ),
         ]
 
     def search(self, job: LookupJob, page_progress=None) -> list[ResultRecord]:
-        return [self.application] if job.mark == "抖音月付" else self.uniqueness
+        return [self.application] if job.mark == "云杉月付" else self.uniqueness
 
     def search_pages(self, job: LookupJob, page_progress=None):
         yield self.search(job, page_progress)
@@ -51,7 +51,7 @@ class OfflineClient:
     def open_detail(self, record: ResultRecord) -> DetailRecord:
         term = (
             "2023年08月28日至2033年08月27日"
-            if record.mark == "抖音月付"
+            if record.mark == "云杉月付"
             else "2026年至2036年"
         )
         status = "LIVE/REGISTRATION/Issued and Active 注册商标"
@@ -77,7 +77,7 @@ def application_workbook(tmp_path: Path) -> Path:
     workbook = Workbook()
     sheet = workbook.active
     sheet.append(["商标名称", "商标申请人", "专用权期限", "截图"])
-    sheet.append(["抖音月付", "北京字跳网络技术有限公司", None, None])
+    sheet.append(["云杉月付", "北京云杉网络技术有限公司", None, None])
     path = tmp_path / "商标申请.xlsx"
     workbook.save(path)
     return path
@@ -95,7 +95,7 @@ def uniqueness_workbook(tmp_path: Path) -> Path:
             "截图",
         ]
     )
-    sheet.append(["美团", None, None, None, None])
+    sheet.append(["青禾", None, None, None, None])
     path = tmp_path / "商标查询是否唯一性.xlsx"
     workbook.save(path)
     return path
@@ -126,7 +126,7 @@ def test_offline_uniqueness_writes_decision_and_stacked_evidence(tmp_path: Path)
     workbook = load_workbook(summary.output_path)
     sheet = workbook.active
     assert sheet["B2"].value == "是"
-    assert sheet["C2"].value == "北京三快科技有限公司"
+    assert sheet["C2"].value == "北京青禾科技有限公司"
     assert sheet["D2"].value == "2026年至2036年"
     assert len(sheet._images) == 1
     workbook.close()

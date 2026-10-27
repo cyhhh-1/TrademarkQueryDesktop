@@ -47,7 +47,7 @@ function formatBytes(bytes: number): string {
       <div class="readonly-field" role="textbox" aria-readonly="true">{{ file?.templateName ?? '等待选择文件' }}</div>
       <button type="button" class="button secondary full-width" data-testid="select-file" :disabled="fileLocked" @click="$emit('select')">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 5.5h6l1.5 2h7.5v8.5h-15z" /></svg>
-        选择 XLSX
+        选择 XLSX 或拖入窗口
       </button>
     </section>
 

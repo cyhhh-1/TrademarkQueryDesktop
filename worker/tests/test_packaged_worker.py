@@ -56,7 +56,7 @@ def test_packaged_worker_uses_utf8_for_chinese_workbook_paths(
     source = tmp_path / "商标申请.xlsx"
     workbook = Workbook()
     workbook.active.append(["商标名称", "商标申请人", "专用权期限", "截图"])
-    workbook.active.append(["抖音月付", "北京字跳网络技术有限公司", "", ""])
+    workbook.active.append(["云杉月付", "北京云杉网络技术有限公司", "", ""])
     workbook.save(source)
 
     commands = [
@@ -92,7 +92,7 @@ def test_packaged_worker_uses_utf8_for_chinese_workbook_paths(
     assert inspected["rows"] == [
         {
             "row": 2,
-            "mark": "抖音月付",
-            "applicant": "北京字跳网络技术有限公司",
+            "mark": "云杉月付",
+            "applicant": "北京云杉网络技术有限公司",
         }
     ]

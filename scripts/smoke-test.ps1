@@ -16,7 +16,7 @@ if (-not (Test-Path -LiteralPath $stagedWorker -PathType Leaf)) {
 }
 
 $version = & $stagedWorker --version
-if ($LASTEXITCODE -ne 0 -or $version.Trim() -ne '0.1.29') {
+if ($LASTEXITCODE -ne 0 -or $version.Trim() -ne '0.1.30') {
     throw "Staged Worker version is invalid: $version"
 }
 $handshake = '{"type":"shutdown","protocol":1}' | & $stagedWorker

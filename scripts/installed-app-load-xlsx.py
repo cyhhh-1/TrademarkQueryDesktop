@@ -78,7 +78,7 @@ def main() -> int:
         timeout=30,
     )
     visible_text = "\n".join(item.window_text() for item in window.descendants())
-    expected_marks = args.expected_mark or ["陶玻网", "花洛莉亚"]
+    expected_marks = args.expected_mark or ["陶器网", "花洛莉亚"]
     if any(mark not in visible_text for mark in expected_marks):
         raise AssertionError(f"expected trademark rows were not loaded: {expected_marks}")
 

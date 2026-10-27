@@ -60,7 +60,7 @@ describe('reduceWorkerEvent', () => {
       task_count: 2,
       size: 2048,
       rows: [
-        { row: 2, mark: '抖音月付', applicant: '北京字跳网络技术有限公司' },
+        { row: 2, mark: '云杉月付', applicant: '北京云杉网络技术有限公司' },
         { row: 5, mark: '放心借', applicant: '北京放心借科技有限公司' },
       ],
     })
@@ -69,7 +69,7 @@ describe('reduceWorkerEvent', () => {
     expect(next.file?.templateName).toBe('商标申请查询')
     expect(next.rows.map((row) => row.row)).toEqual([2, 5])
     expect(next.rows.map((row) => row.applicant)).toEqual([
-      '北京字跳网络技术有限公司',
+      '北京云杉网络技术有限公司',
       '北京放心借科技有限公司',
     ])
     expect(taskCounts(next.rows).pending).toBe(2)
@@ -96,14 +96,14 @@ describe('reduceWorkerEvent', () => {
     const state: UiState = {
       ...initialUiState(),
       rows: [
-        { row: 2, mark: '绿猫', applicant: '', phase: 'running', result: '-' },
+        { row: 2, mark: '青猫', applicant: '', phase: 'running', result: '-' },
       ],
     }
     const next = reduceWorkerEvent(state, {
       type: 'row_progress',
       phase: 'completed',
       row: 2,
-      mark: '绿猫',
+      mark: '青猫',
       applicant: '北京天龙天天洁城市服务科技有限公司',
       status: 'success',
       uniqueness: '是',

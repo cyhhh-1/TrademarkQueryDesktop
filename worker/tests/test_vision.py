@@ -28,23 +28,23 @@ def record(sequence: int, mark: str = "") -> ResultRecord:
 
 
 def test_parse_mark_response_accepts_json_and_markdown_fence() -> None:
-    content = '```json\n{"rows":[{"sequence":2,"mark":"美团"}]}\n```'
+    content = '```json\n{"rows":[{"sequence":2,"mark":"青禾"}]}\n```'
 
-    assert parse_mark_response(content) == {2: "美团"}
+    assert parse_mark_response(content) == {2: "青禾"}
 
 
 def test_parse_mark_response_keeps_explicit_blank_rows() -> None:
-    content = '{"rows":[{"sequence":1,"mark":"绿猫"},{"sequence":2,"mark":""}]}'
+    content = '{"rows":[{"sequence":1,"mark":"青猫"},{"sequence":2,"mark":""}]}'
 
-    assert parse_mark_response(content) == {1: "绿猫", 2: ""}
+    assert parse_mark_response(content) == {1: "青猫", 2: ""}
 
 
 def test_apply_recognized_marks_only_fills_blank_values() -> None:
-    records = [record(1, "美团月付"), record(2)]
+    records = [record(1, "青禾月付"), record(2)]
 
-    enriched = apply_recognized_marks(records, {1: "错误覆盖", 2: "美团"})
+    enriched = apply_recognized_marks(records, {1: "错误覆盖", 2: "青禾"})
 
-    assert [item.mark for item in enriched] == ["美团月付", "美团"]
+    assert [item.mark for item in enriched] == ["青禾月付", "青禾"]
     assert records[1].mark == ""
 
 
@@ -105,7 +105,7 @@ def test_qwen_defers_transient_rate_limit_without_blocking_retry(monkeypatch) ->
     recognizer = QwenVisionRecognizer(VisionSettings("https://example.invalid", "secret"))
 
     try:
-        recognizer.recognize_marks(b"png", [record(1)], "美团")
+        recognizer.recognize_marks(b"png", [record(1)], "青禾")
     except VisionRecognitionError as exc:
         assert "HTTP 429" in str(exc)
     else:
@@ -124,7 +124,7 @@ def test_qwen_does_not_retry_bad_credentials(monkeypatch) -> None:
     recognizer = QwenVisionRecognizer(VisionSettings("https://example.invalid", "secret"))
 
     try:
-        recognizer.recognize_marks(b"png", [record(1)], "美团")
+        recognizer.recognize_marks(b"png", [record(1)], "青禾")
     except VisionRecognitionError as exc:
         assert "HTTP 401" in str(exc)
     else:

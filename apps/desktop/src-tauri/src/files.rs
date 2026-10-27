@@ -15,8 +15,21 @@ pub enum FileCommandError {
     WrongExtension,
     #[error("文件路径无效")]
     InvalidPath,
+    #[error("未知的查询模板")]
+    UnknownTemplate,
     #[error("保存结果失败: {0}")]
     Io(#[from] std::io::Error),
+}
+
+const APPLICATION_TEMPLATE: &[u8] = include_bytes!("../../../../商标申请.xlsx");
+const UNIQUENESS_TEMPLATE: &[u8] = include_bytes!("../../../../商标查询是否唯一性.xlsx");
+
+pub fn template_contents(kind: &str) -> Result<(&'static [u8], &'static str), FileCommandError> {
+    match kind {
+        "application" => Ok((APPLICATION_TEMPLATE, "商标查询模板.xlsx")),
+        "uniqueness" => Ok((UNIQUENESS_TEMPLATE, "商标唯一性查询模板.xlsx")),
+        _ => Err(FileCommandError::UnknownTemplate),
+    }
 }
 
 pub fn validate_save_target(input: &Path, target: &Path) -> Result<(), FileCommandError> {
@@ -44,6 +57,33 @@ pub async fn pick_xlsx(app: tauri::AppHandle) -> Result<Option<String>, String> 
         .map(|path| path.into_path().map(|value| value.display().to_string()))
         .transpose()
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub async fn save_template(
+    app: tauri::AppHandle,
+    kind: String,
+) -> Result<Option<String>, String> {
+    let (bytes, filename) = template_contents(&kind).map_err(|error| error.to_string())?;
+    let selected = app
+        .dialog()
+        .file()
+        .add_filter("Excel 工作簿", &["xlsx"])
+        .set_file_name(filename)
+        .blocking_save_file();
+    let Some(selected) = selected else {
+        return Ok(None);
+    };
+    let target = selected.into_path().map_err(|error| error.to_string())?;
+    if target
+        .extension()
+        .and_then(|value| value.to_str())
+        .is_none_or(|value| !value.eq_ignore_ascii_case("xlsx"))
+    {
+        return Err(FileCommandError::WrongExtension.to_string());
+    }
+    atomic_write(bytes, &target).map_err(|error| error.to_string())?;
+    Ok(Some(target.display().to_string()))
 }
 
 #[tauri::command]
@@ -151,6 +191,33 @@ fn atomic_copy(source: &Path, target: &Path) -> Result<(), FileCommandError> {
     let temporary = parent.join(format!(".{name}.writing"));
     let backup = parent.join(format!(".{name}.previous"));
     fs::copy(source, &temporary)?;
+    if target.exists() {
+        if backup.exists() {
+            fs::remove_file(&backup)?;
+        }
+        fs::rename(target, &backup)?;
+        if let Err(error) = fs::rename(&temporary, target) {
+            let _ = fs::rename(&backup, target);
+            let _ = fs::remove_file(&temporary);
+            return Err(FileCommandError::Io(error));
+        }
+        fs::remove_file(backup)?;
+    } else {
+        fs::rename(temporary, target)?;
+    }
+    Ok(())
+}
+
+fn atomic_write(contents: &[u8], target: &Path) -> Result<(), FileCommandError> {
+    let parent = target.parent().ok_or(FileCommandError::InvalidPath)?;
+    fs::create_dir_all(parent)?;
+    let name = target
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or(FileCommandError::InvalidPath)?;
+    let temporary = parent.join(format!(".{name}.writing"));
+    let backup = parent.join(format!(".{name}.previous"));
+    fs::write(&temporary, contents)?;
     if target.exists() {
         if backup.exists() {
             fs::remove_file(&backup)?;

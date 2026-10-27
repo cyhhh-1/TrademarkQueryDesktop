@@ -1,6 +1,6 @@
 [package]
 name = "trademark-query-desktop"
-version = "0.1.29"
+version = "0.1.30"
 description = "Local CNIPA trademark workbook query desktop application"
 authors = ["Trademark Query Desktop"]
 edition = "2024"

@@ -78,9 +78,30 @@ const status = computed(() => {
           <strong>{{ task.state.value.alert }}</strong>
         </div>
         <div v-else-if="task.state.value.alert" class="error-banner" role="alert">{{ task.state.value.alert }}</div>
-        <div class="status-heading">
-          <h1>{{ status[0] }}</h1>
-          <p>{{ status[1] }}</p>
+        <div class="status-heading" :class="{ 'selection-heading': currentStep === 1 }">
+          <div>
+            <h1>{{ status[0] }}</h1>
+            <p>{{ status[1] }}</p>
+          </div>
+          <div v-if="currentStep === 1" class="template-downloads" aria-label="下载查询模板">
+            <span>没有模板？</span>
+            <button
+              type="button"
+              class="button template-button"
+              data-testid="download-application-template"
+              @click="task.downloadTemplate('application')"
+            >
+              下载商标查询模板
+            </button>
+            <button
+              type="button"
+              class="button template-button"
+              data-testid="download-uniqueness-template"
+              @click="task.downloadTemplate('uniqueness')"
+            >
+              下载唯一性查询模板
+            </button>
+          </div>
         </div>
         <TaskProgress
           :progress="task.state.value.progress"

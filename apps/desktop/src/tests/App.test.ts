@@ -13,6 +13,8 @@ class FakeDesktopService implements DesktopService {
   autoBrowserStatus = true
   autoConnectStatus = true
   minimizeCalls = 0
+  templateDownloads: string[] = []
+  fileDropHandler: ((paths: string[]) => void) | null = null
   settings = {
     DASHSCOPE_BASE_URL: 'https://gateway.example.com/v1',
     DASHSCOPE_API_KEY: 'fake-company-key',
@@ -41,6 +43,18 @@ class FakeDesktopService implements DesktopService {
     return 'D:/资料/商标申请.xlsx'
   }
 
+  async listenFileDrop(handler: (paths: string[]) => void): Promise<() => void> {
+    this.fileDropHandler = handler
+    return () => {
+      this.fileDropHandler = null
+    }
+  }
+
+  async downloadTemplate(kind: 'application' | 'uniqueness'): Promise<string | null> {
+    this.templateDownloads.push(kind)
+    return `D:/模板/${kind}.xlsx`
+  }
+
   async send(command: Record<string, unknown>): Promise<void> {
     this.sent.push(command)
     if (command.type === 'inspect_file') {
@@ -50,7 +64,7 @@ class FakeDesktopService implements DesktopService {
         mode: 'application',
         task_count: 1,
         size: 10_240,
-        rows: [{ row: 2, mark: '抖音月付', applicant: '北京字跳网络技术有限公司' }],
+        rows: [{ row: 2, mark: '云杉月付', applicant: '北京云杉网络技术有限公司' }],
       })
     }
     if (command.type === 'open_browser') {
@@ -86,6 +100,10 @@ class FakeDesktopService implements DesktopService {
   emit(event: WorkerEvent): void {
     this.listener?.(event)
   }
+
+  emitFileDrop(paths: string[]): void {
+    this.fileDropHandler?.(paths)
+  }
 }
 
 
@@ -101,6 +119,34 @@ function mountApp(service: FakeDesktopService) {
 
 
 describe('App', () => {
+  it('downloads both workbook templates from the step-one content area', async () => {
+    const service = new FakeDesktopService()
+    const wrapper = mountApp(service)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="download-application-template"]').trigger('click')
+    await wrapper.get('[data-testid="download-uniqueness-template"]').trigger('click')
+    await flushPromises()
+
+    expect(service.templateDownloads).toEqual(['application', 'uniqueness'])
+  })
+
+  it('inspects an XLSX workbook dropped into the desktop window', async () => {
+    const service = new FakeDesktopService()
+    const wrapper = mountApp(service)
+    await flushPromises()
+
+    service.emitFileDrop(['D:/资料/拖入的商标申请.xlsx'])
+    await flushPromises()
+
+    expect(service.sent).toContainEqual({
+      type: 'inspect_file',
+      protocol: 1,
+      path: 'D:/资料/拖入的商标申请.xlsx',
+    })
+    expect(wrapper.text()).toContain('拖入的商标申请.xlsx')
+  })
+
   it('rechecks login before allowing a newly selected workbook to start', async () => {
     const service = new FakeDesktopService()
     const wrapper = mountApp(service)
@@ -134,7 +180,7 @@ describe('App', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('商标申请查询')
-    expect(wrapper.text()).toContain('抖音月付')
+    expect(wrapper.text()).toContain('云杉月付')
     expect(wrapper.text()).toContain('请在专用 Edge 中自行完成登录')
     expect(wrapper.get('[data-testid="start-task"]').attributes('disabled')).toBeDefined()
     expect(service.minimizeCalls).toBe(0)
@@ -179,7 +225,7 @@ describe('App', () => {
     await wrapper.get('[data-testid="select-file"]').trigger('click')
     service.emit({ type: 'browser_state', state: 'READY' })
     service.emit({ type: 'task_state', state: 'running', run_id: 'r1' })
-    service.emit({ type: 'row_progress', phase: 'started', row: 2, mark: '抖音月付' })
+    service.emit({ type: 'row_progress', phase: 'started', row: 2, mark: '云杉月付' })
     await flushPromises()
 
     await wrapper.get('[data-testid="pause-task"]').trigger('click')
@@ -241,7 +287,7 @@ describe('App', () => {
     service.emit({
       type: 'row_deferred',
       row: 2,
-      mark: '抖音月付',
+      mark: '云杉月付',
       attempt: 1,
       will_retry: true,
       message: '结果页暂时不可用',
@@ -294,7 +340,7 @@ describe('App', () => {
       mode: 'application',
       task_count: 1,
       size: 1024,
-      rows: [{ row: 2, mark: '抖音月付', applicant: '北京字跳网络技术有限公司' }],
+      rows: [{ row: 2, mark: '云杉月付', applicant: '北京云杉网络技术有限公司' }],
     })
     service.emit({ type: 'completed', output_path: 'D:/结果/商标申请_已查询.xlsx' })
     await flushPromises()
@@ -306,7 +352,7 @@ describe('App', () => {
       '阶段',
       '结果',
     ])
-    expect(wrapper.text()).toContain('北京字跳网络技术有限公司')
+    expect(wrapper.text()).toContain('北京云杉网络技术有限公司')
     expect(wrapper.get('[data-testid="save-as"]').attributes('disabled')).toBeUndefined()
   })
 
@@ -486,5 +532,24 @@ describe('App', () => {
     await wrapper.get('[data-testid="open-model-settings"]').trigger('click')
     await flushPromises()
     expect(wrapper.get('[data-testid="model-name"]').element).toHaveProperty('value', 'qwen-plus')
+  })
+
+  it('keeps model settings open when the backdrop is clicked', async () => {
+    const service = new FakeDesktopService()
+    const wrapper = mountApp(service)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="open-model-settings"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('.settings-backdrop').trigger('click')
+
+    expect(wrapper.find('[data-testid="model-settings-dialog"]').exists()).toBe(true)
+    await wrapper.get('[data-testid="model-settings-cancel"]').trigger('click')
+    expect(wrapper.find('[data-testid="model-settings-dialog"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="open-model-settings"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[aria-label="关闭设置"]').trigger('click')
+    expect(wrapper.find('[data-testid="model-settings-dialog"]').exists()).toBe(false)
   })
 })

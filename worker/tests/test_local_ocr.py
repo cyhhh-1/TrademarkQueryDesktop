@@ -35,42 +35,42 @@ def ocr_row(text: str, confidence: float):
 
 def test_local_ocr_accepts_chinese_name_with_separate_pinyin() -> None:
     engine = FakeEngine(
-        [ocr_row("扶馨陪诊", 0.994), ocr_row("FUXIN PEIZHEN", 0.999)]
+        [ocr_row("安馨陪诊", 0.994), ocr_row("ANXIN PEIZHEN", 0.999)]
     )
     recognizer = LocalMarkRecognizer(engine)
     image = Image.new("RGB", (240, 100), "white")
 
-    assert recognizer.recognize_mark(image, "扶馨陪诊") == "扶馨陪诊"
+    assert recognizer.recognize_mark(image, "安馨陪诊") == "安馨陪诊"
     assert engine.calls == 1
     image.close()
 
 
 def test_local_ocr_preserves_additional_chinese_characters() -> None:
-    engine = FakeEngine([ocr_row("快手科技", 0.98)])
+    engine = FakeEngine([ocr_row("风行科技", 0.98)])
     recognizer = LocalMarkRecognizer(engine)
     image = Image.new("RGB", (240, 100), "white")
 
-    assert recognizer.recognize_mark(image, "快手") == "快手科技"
+    assert recognizer.recognize_mark(image, "风行") == "风行科技"
     image.close()
 
 
 def test_local_ocr_defers_low_confidence_text_to_remote_model() -> None:
-    engine = FakeEngine([ocr_row("扶馨陪诊", 0.60)])
+    engine = FakeEngine([ocr_row("安馨陪诊", 0.60)])
     recognizer = LocalMarkRecognizer(engine)
     image = Image.new("RGB", (240, 100), "white")
 
-    assert recognizer.recognize_mark(image, "扶馨陪诊") is None
+    assert recognizer.recognize_mark(image, "安馨陪诊") is None
     image.close()
 
 
 def test_stable_fuzzy_search_extension_is_resolved_locally() -> None:
-    engine = FakeEngine([ocr_row("抖音月付", 0.99)])
+    engine = FakeEngine([ocr_row("云杉月付", 0.99)])
     recognizer = LocalMarkRecognizer(engine)
     image = Image.new("RGB", (240, 100), "white")
 
-    assessment = recognizer.assess_mark(image, "抖音")
+    assessment = recognizer.assess_mark(image, "云杉")
 
-    assert assessment.text == "抖音月付"
+    assert assessment.text == "云杉月付"
     assert assessment.needs_remote is False
     assert engine.calls == 2
     image.close()
@@ -81,7 +81,7 @@ def test_single_character_near_match_is_sent_to_remote_model() -> None:
     recognizer = LocalMarkRecognizer(engine)
     image = Image.new("RGB", (240, 100), "white")
 
-    assessment = recognizer.assess_mark(image, "票务兔")
+    assessment = recognizer.assess_mark(image, "票务鹿")
 
     assert assessment.text == "票务免"
     assert assessment.needs_remote is True
@@ -90,15 +90,15 @@ def test_single_character_near_match_is_sent_to_remote_model() -> None:
 
 def test_conflicting_original_and_enhanced_reads_are_sent_to_remote_model() -> None:
     engine = SequencedEngine(
-        [ocr_row("装千里", 0.99)],
-        [ocr_row("装干里", 0.99)],
+        [ocr_row("行千里", 0.99)],
+        [ocr_row("行干里", 0.99)],
     )
     recognizer = LocalMarkRecognizer(engine)
     image = Image.new("RGB", (240, 100), "white")
 
     assessment = recognizer.assess_mark(image, "别的商标")
 
-    assert assessment.text == "装干里"
+    assert assessment.text == "行干里"
     assert assessment.needs_remote is True
     assert engine.calls == 2
     image.close()

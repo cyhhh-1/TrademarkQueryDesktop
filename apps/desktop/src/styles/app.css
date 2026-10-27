@@ -75,6 +75,10 @@
 .error-banner { border-color: #efb9b6; color: #8b2924; background: #fff2f1; }
 .status-heading h1 { margin: 4px 0 3px; font-size: 28px; line-height: 1.25; }
 .status-heading p { margin: 0; color: var(--color-text-muted); font-size: 15px; }
+.selection-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.template-downloads { display: flex; align-items: center; gap: 9px; flex: none; }
+.template-downloads > span { margin-right: 2px; color: var(--color-text-muted); font-size: 12px; }
+.template-button { min-width: 148px; height: 38px; padding-inline: 13px; color: #315781; font-size: 13px; }
 .task-progress { margin-top: 18px; padding: 15px 18px 14px; border: 1px solid #cbdcf5; border-radius: 10px; background: #f6f9fe; }
 .progress-headline { display: flex; align-items: end; justify-content: space-between; gap: 18px; }
 .progress-headline > div { display: grid; min-width: 0; }
@@ -147,6 +151,8 @@
   .task-panel { padding-inline: 20px; }
   .task-summary { margin-block: 18px 16px; }
   .progress-meta { grid-template-columns: repeat(2, 1fr); row-gap: 9px; }
+  .selection-heading { display: block; }
+  .template-downloads { margin-top: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

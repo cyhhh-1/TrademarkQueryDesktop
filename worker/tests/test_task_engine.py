@@ -177,12 +177,12 @@ def test_application_skips_inactive_later_sequence_and_uses_active_registration(
     source = make_workbook(
         tmp_path,
         LookupMode.APPLICATION,
-        [["抖音月付", "北京字跳网络技术有限公司", None, None]],
+        [["云杉月付", "北京云杉网络技术有限公司", None, None]],
     )
-    low = record(2, "抖音月付", "北京字跳网络技术有限公司", "66227440")
-    high = record(4, "抖音月付", "北京字跳网络技术有限公司", "90000004")
+    low = record(2, "云杉月付", "北京云杉网络技术有限公司", "66227440")
+    high = record(4, "云杉月付", "北京云杉网络技术有限公司", "90000004")
     client = FakeClient(
-        {"抖音月付": [low, high]},
+        {"云杉月付": [low, high]},
         {4: detail(high, "2024年至2034年"), 2: active_detail(low, "2023年至2033年")},
     )
     before = sha256(source.read_bytes()).hexdigest()
@@ -364,11 +364,11 @@ def test_uniqueness_two_active_applicants_is_not_unique_and_uses_representatives
     source = make_workbook(
         tmp_path,
         LookupMode.UNIQUENESS,
-        [["美团", None, "旧申请人", "旧期限", None]],
+        [["青禾", None, "旧申请人", "旧期限", None]],
     )
-    exact = [record(1, "美团", "甲公司"), record(2, "美团", "乙公司")]
+    exact = [record(1, "青禾", "甲公司"), record(2, "青禾", "乙公司")]
     client = FakeClient(
-        {"美团": [record(9, "美团月付", "甲公司"), *exact]},
+        {"青禾": [record(9, "青禾月付", "甲公司"), *exact]},
         {1: active_detail(exact[0]), 2: active_detail(exact[1])},
     )
 
@@ -395,12 +395,12 @@ def test_unique_company_fills_detail_from_first_active_candidate(
     tmp_path: Path,
 ) -> None:
     source = make_workbook(
-        tmp_path, LookupMode.UNIQUENESS, [["美团", None, None, None, None]]
+        tmp_path, LookupMode.UNIQUENESS, [["青禾", None, None, None, None]]
     )
-    low = record(3, "美团", "北京三快科技有限公司")
-    high = record(8, "美团", " 北京三快科技有限公司 ")
+    low = record(3, "青禾", "北京青禾科技有限公司")
+    high = record(8, "青禾", " 北京青禾科技有限公司 ")
     client = FakeClient(
-        {"美团": [low, high]},
+        {"青禾": [low, high]},
         {8: detail(high, None), 3: active_detail(low)},
     )
 
@@ -410,21 +410,21 @@ def test_unique_company_fills_detail_from_first_active_candidate(
 
     result = summary.items[0]
     assert result.uniqueness == "是"
-    assert result.applicant == "北京三快科技有限公司"
+    assert result.applicant == "北京青禾科技有限公司"
     assert result.term == "2025年至2035年"
     assert client.opened_sequences == [8, 3]
 
 
 def test_uniqueness_multiple_applicants_only_one_active_is_unique(tmp_path: Path) -> None:
     source = make_workbook(
-        tmp_path, LookupMode.UNIQUENESS, [["久久泉", None, None, None, None]]
+        tmp_path, LookupMode.UNIQUENESS, [["清泉饮品", None, None, None, None]]
     )
-    owner_new = record(9, "久久泉", "山西君康水处理设备有限公司")
-    owner_old = record(7, "久久泉", "山西君康水处理设备有限公司")
-    other_new = record(8, "久久泉", "北京维久云科技有限公司")
-    other_old = record(6, "久久泉", "北京维久云科技有限公司")
+    owner_new = record(9, "清泉饮品", "山西示例水处理设备有限公司")
+    owner_old = record(7, "清泉饮品", "山西示例水处理设备有限公司")
+    other_new = record(8, "清泉饮品", "北京示例云科技有限公司")
+    other_old = record(6, "清泉饮品", "北京示例云科技有限公司")
     client = FakeClient(
-        {"久久泉": [owner_old, other_old, owner_new, other_new]},
+        {"清泉饮品": [owner_old, other_old, owner_new, other_new]},
         {
             9: active_detail(owner_new),
             8: detail(other_new, None),
@@ -438,7 +438,7 @@ def test_uniqueness_multiple_applicants_only_one_active_is_unique(tmp_path: Path
 
     result = summary.items[0]
     assert result.uniqueness == "是"
-    assert result.applicant == "山西君康水处理设备有限公司"
+    assert result.applicant == "山西示例水处理设备有限公司"
     assert client.opened_sequences == [9, 8, 6]
     assert all(sequence in {9, 7} for sequence in client.stacked_sequences)
     assert 1 <= len(client.stacked_sequences) <= 4
@@ -446,13 +446,13 @@ def test_uniqueness_multiple_applicants_only_one_active_is_unique(tmp_path: Path
 
 def test_uniqueness_stops_after_second_active_applicant(tmp_path: Path) -> None:
     source = make_workbook(
-        tmp_path, LookupMode.UNIQUENESS, [["良木森林", None, None, None, None]]
+        tmp_path, LookupMode.UNIQUENESS, [["青松森林", None, None, None, None]]
     )
-    first = record(10, "良木森林", "甲公司")
-    second = record(9, "良木森林", "乙公司")
-    never_needed = record(8, "良木森林", "丙公司")
+    first = record(10, "青松森林", "甲公司")
+    second = record(9, "青松森林", "乙公司")
+    never_needed = record(8, "青松森林", "丙公司")
     client = FakeClient(
-        {"良木森林": [first, second, never_needed]},
+        {"青松森林": [first, second, never_needed]},
         {10: active_detail(first), 9: active_detail(second), 8: active_detail(never_needed)},
     )
 

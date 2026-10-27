@@ -224,24 +224,24 @@ git commit -m "feat: add worker protocol foundation"
 
 ```python
 def test_application_candidates_are_exact_and_sequence_descending():
-    records = [record(1, "抖音月付", "北京字跳网络技术有限公司"),
-               record(4, "抖音月付服务", "北京字跳网络技术有限公司"),
-               record(3, " 抖音月付 ", "北京字跳网络技术有限公司")]
-    assert [r.sequence for r in application_candidates(records, "抖音月付", "北京字跳网络技术有限公司")] == [3, 1]
+    records = [record(1, "云杉月付", "北京云杉网络技术有限公司"),
+               record(4, "云杉月付服务", "北京云杉网络技术有限公司"),
+               record(3, " 云杉月付 ", "北京云杉网络技术有限公司")]
+    assert [r.sequence for r in application_candidates(records, "云杉月付", "北京云杉网络技术有限公司")] == [3, 1]
 
 def test_chinese_applicant_uses_chinese_field():
-    assert applicant_field("北京字跳网络技术有限公司") == "zh"
+    assert applicant_field("北京云杉网络技术有限公司") == "zh"
     assert applicant_field("ByteDance Ltd.") == "en"
 
 def test_multiple_normalized_companies_are_not_unique():
-    records = [record(1, "美团月付", "北京三快科技有限公司"),
-               record(2, "美团月付", "上海三快科技有限公司")]
-    decision = decide_uniqueness(records, "美团月付")
+    records = [record(1, "青禾月付", "北京青禾科技有限公司"),
+               record(2, "青禾月付", "上海青禾科技有限公司")]
+    decision = decide_uniqueness(records, "青禾月付")
     assert decision.status == "否"
-    assert decision.applicants == ("北京三快科技有限公司", "上海三快科技有限公司")
+    assert decision.applicants == ("北京青禾科技有限公司", "上海青禾科技有限公司")
 
 def test_missing_applicant_requires_review():
-    assert decide_uniqueness([record(1, "美团月付", "")], "美团月付").status == "需人工复核"
+    assert decide_uniqueness([record(1, "青禾月付", "")], "青禾月付").status == "需人工复核"
 ```
 
 - [ ] **Step 2: 运行测试并确认 RED**
@@ -302,7 +302,7 @@ git commit -m "feat: add trademark selection rules"
 ```python
 def test_detects_application_template_by_headers(tmp_path):
     path = make_xlsx(tmp_path, ["商标名称", "商标申请人", "专用权期限", "截图"],
-                     [["抖音月付", "北京字跳网络技术有限公司", None, None]])
+                     [["云杉月付", "北京云杉网络技术有限公司", None, None]])
     inspection = inspect_workbook(path)
     assert inspection.mode is LookupMode.APPLICATION
     assert inspection.columns == {"mark": 1, "applicant": 2, "term": 3, "screenshot": 4}
@@ -310,7 +310,7 @@ def test_detects_application_template_by_headers(tmp_path):
 def test_detects_uniqueness_template_with_multiline_headers(tmp_path):
     path = make_xlsx(tmp_path,
         ["商标名称", "是否唯一性\n（当申请公司有多家时填写“否”", "商标申请人\n当是否唯一性“否”时此处空白", "商标有效期", "截图"],
-        [["美团月付", None, None, None, None]])
+        [["青禾月付", None, None, None, None]])
     assert inspect_workbook(path).mode is LookupMode.UNIQUENESS
 
 def test_working_copy_does_not_change_source(tmp_path):
@@ -436,10 +436,10 @@ def test_application_result_writes_term_and_embeds_detail_image(tmp_path):
     original_hash = sha256(source.read_bytes()).hexdigest()
     working = prepare_working_copy(source, tmp_path / "run")
     apply_row_result(working, inspection, job,
-        RowResult.application_success("北京字跳网络技术有限公司", "2023年08月28日至2033年08月27日"),
+        RowResult.application_success("北京云杉网络技术有限公司", "2023年08月28日至2033年08月27日"),
         solid_png(tmp_path / "detail.png", (640, 900), "white"))
     wb = load_workbook(working)
-    assert wb["Sheet1"]["B2"].value == "北京字跳网络技术有限公司"
+    assert wb["Sheet1"]["B2"].value == "北京云杉网络技术有限公司"
     assert wb["Sheet1"]["C2"].value == "2023年08月28日至2033年08月27日"
     assert len(wb["Sheet1"]._images) == 1
     assert sha256(source.read_bytes()).hexdigest() == original_hash
@@ -602,17 +602,17 @@ git commit -m "feat: manage dedicated Edge session"
 ```python
 def test_parses_complete_result_row():
     rows = [["序号", "申请/注册号", "国际分类", "申请日期", "商标", "申请人名称"],
-            ["2", "93296493", "35", "2026年08月03日", "美团", "北京三快科技有限公司"]]
-    assert parse_result_table(rows) == [ResultRecord(2, "93296493", "35", "2026年08月03日", "美团", "北京三快科技有限公司")]
+            ["2", "93296493", "35", "2026年08月03日", "青禾", "北京青禾科技有限公司"]]
+    assert parse_result_table(rows) == [ResultRecord(2, "93296493", "35", "2026年08月03日", "青禾", "北京青禾科技有限公司")]
 
 def test_active_detail_requires_matching_applicant_and_term():
-    detail = parse_detail({"商标": "抖音月付", "申请/注册号": "66227440",
-                           "申请人名称（中文）": "北京字跳网络技术有限公司",
+    detail = parse_detail({"商标": "云杉月付", "申请/注册号": "66227440",
+                           "申请人名称（中文）": "北京云杉网络技术有限公司",
                            "专用权期限": "2023年08月28日至2033年08月27日"})
     assert detail.term == "2023年08月28日至2033年08月27日"
 
 def test_pending_detail_has_no_term():
-    assert parse_detail({"商标": "抖音月付", "申请/注册号": "1"}).term is None
+    assert parse_detail({"商标": "云杉月付", "申请/注册号": "1"}).term is None
 ```
 
 - [ ] **Step 2: 运行测试并确认 RED**
@@ -647,12 +647,12 @@ def parse_detail(labels):
 
 ```python
 def test_uniqueness_search_visits_every_page_and_keeps_exact_marks(page_port):
-    records = CnipaClient(page_port).search(LookupJob.uniqueness(2, "美团"))
+    records = CnipaClient(page_port).search(LookupJob.uniqueness(2, "青禾"))
     assert page_port.visited_pages == [1, 2]
     assert [r.registration_no for r in records] == ["93296493", "93296492"]
 
 def test_application_opens_mark_cell_not_registration_link(page_port):
-    record = ResultRecord(2, "66227440", "36", "2022年07月27日", "抖音月付", "北京字跳网络技术有限公司")
+    record = ResultRecord(2, "66227440", "36", "2022年07月27日", "云杉月付", "北京云杉网络技术有限公司")
     CnipaClient(page_port).open_detail(record)
     assert page_port.clicked == (2, "mark_cell")
 ```
@@ -732,7 +732,7 @@ def test_application_tries_later_sequence_first_until_term_exists(engine_fixture
 
 ```python
 def test_uniqueness_stacks_every_exact_row_and_blanks_non_unique_fields(engine_fixture):
-    summary = engine_fixture.run_uniqueness(records=[record(1, "美团", "甲公司"), record(2, "美团", "乙公司")])
+    summary = engine_fixture.run_uniqueness(records=[record(1, "青禾", "甲公司"), record(2, "青禾", "乙公司")])
     result = summary.items[0]
     assert result.uniqueness == "否"
     assert result.applicant is None

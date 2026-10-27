@@ -9,6 +9,7 @@ export function useTrademarkTask() {
   const service = inject(DESKTOP_SERVICE_KEY, createDesktopService())
   const state = ref(initialUiState())
   let unlisten: (() => void) | null = null
+  let unlistenFileDrop: (() => void) | null = null
   let clockTimer: ReturnType<typeof setInterval> | null = null
   const clockMs = ref(Date.now())
   const activeStartedAt = ref<number | null>(null)
@@ -109,6 +110,19 @@ export function useTrademarkTask() {
     }, 1000)
     unlisten = await service.listen(dispatch)
     await perform(() => service.startWorker())
+    try {
+      unlistenFileDrop = await service.listenFileDrop((paths) => {
+        if (fileLocked.value) return
+        const path = paths.find((candidate) => candidate.toLowerCase().endsWith('.xlsx'))
+        if (!path) {
+          dispatch({ type: 'error', message: '拖入的文件不是 XLSX 工作簿，请重新选择' })
+          return
+        }
+        void inspectFile(path)
+      })
+    } catch {
+      // File selection still works if an older WebView cannot expose native drag/drop events.
+    }
   })
 
   onBeforeUnmount(() => {
@@ -116,6 +130,7 @@ export function useTrademarkTask() {
     finishBrowserCheck()
     finishBrowserOpen()
     unlisten?.()
+    unlistenFileDrop?.()
     void service.stopWorker()
   })
 
@@ -123,13 +138,21 @@ export function useTrademarkTask() {
   const queryActive = computed(() => ['running', 'pausing'].includes(state.value.taskState))
   const browserLocked = computed(() => browserChecking.value || browserOpening.value || state.value.taskState === 'cancelling')
 
+  const inspectFile = (path: string) => perform(
+    () => service.send({ type: 'inspect_file', protocol: 1, path }),
+  )
+
   const selectFile = () => {
     if (fileLocked.value) return Promise.resolve()
     return perform(async () => {
-    const path = await service.pickXlsx()
-    if (path) await service.send({ type: 'inspect_file', protocol: 1, path })
+      const path = await service.pickXlsx()
+      if (path) await service.send({ type: 'inspect_file', protocol: 1, path })
     })
   }
+
+  const downloadTemplate = (kind: 'application' | 'uniqueness') => perform(
+    () => service.downloadTemplate(kind).then(() => undefined),
+  )
 
   const clearFile = () => {
     if (fileLocked.value) return
@@ -224,6 +247,7 @@ export function useTrademarkTask() {
       return Math.max(0, Math.round((elapsed / 1000 / counts.completed) * (counts.total - counts.completed)))
     }),
     selectFile,
+    downloadTemplate,
     clearFile,
     openBrowser,
     connectBrowser,

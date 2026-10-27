@@ -1,5 +1,5 @@
 use serde_json::json;
-use trademark_query_desktop_lib::files::validate_save_target;
+use trademark_query_desktop_lib::files::{template_contents, validate_save_target};
 use trademark_query_desktop_lib::worker::LineDecoder;
 
 #[test]
@@ -40,4 +40,15 @@ fn accepts_different_xlsx_target() {
     let target = std::path::PathBuf::from(r"C:\work\商标申请_已查询.xlsx");
 
     assert!(validate_save_target(&input, &target).is_ok());
+}
+
+#[test]
+fn embeds_both_valid_xlsx_templates() {
+    for kind in ["application", "uniqueness"] {
+        let (bytes, filename) = template_contents(kind).unwrap();
+        assert!(filename.ends_with(".xlsx"));
+        assert!(bytes.starts_with(b"PK"), "xlsx must be a ZIP container");
+        assert!(bytes.len() > 10_000);
+    }
+    assert!(template_contents("unknown").is_err());
 }

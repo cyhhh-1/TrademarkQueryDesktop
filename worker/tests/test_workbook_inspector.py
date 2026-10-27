@@ -36,7 +36,7 @@ def test_detects_application_template_by_headers(tmp_path: Path) -> None:
         tmp_path,
         "application.xlsx",
         ["商标名称", "商标申请人", "专用权期限", "截图"],
-        [["抖音月付", "北京字跳网络技术有限公司", None, None]],
+        [["云杉月付", "北京云杉网络技术有限公司", None, None]],
     )
 
     inspection = inspect_workbook(path)
@@ -65,7 +65,7 @@ def test_detects_uniqueness_template_with_real_multiline_headers(
             "商标有效期",
             "截图",
         ],
-        [["美团月付", None, None, None, None]],
+        [["青禾月付", None, None, None, None]],
     )
 
     inspection = inspect_workbook(path)
@@ -85,7 +85,7 @@ def test_working_copy_does_not_change_source(tmp_path: Path) -> None:
         tmp_path,
         "商标申请.xlsx",
         ["商标名称", "商标申请人", "专用权期限", "截图"],
-        [["抖音月付", "北京字跳网络技术有限公司", None, None]],
+        [["云杉月付", "北京云杉网络技术有限公司", None, None]],
     )
     digest = sha256(source.read_bytes()).hexdigest()
 
@@ -102,7 +102,7 @@ def test_read_only_source_produces_writable_result_copy(tmp_path: Path) -> None:
         tmp_path,
         "只读商标申请.xlsx",
         ["商标名称", "商标申请人", "专用权期限", "截图"],
-        [["陶玻网", "义乌市马腾电子商务有限公司", None, None]],
+        [["陶器网", "义乌市示例电子商务有限公司", None, None]],
     )
     source.chmod(0o444)
     original_hash = sha256(source.read_bytes()).hexdigest()
@@ -123,7 +123,7 @@ def test_load_jobs_reads_every_nonempty_mark_and_applicant(tmp_path: Path) -> No
         "application.xlsx",
         ["商标名称", "商标申请人", "专用权期限", "截图"],
         [
-            ["抖音月付", "北京字跳网络技术有限公司", None, None],
+            ["云杉月付", "北京云杉网络技术有限公司", None, None],
             [None, None, None, None],
             ["英文商标", "Example Holdings Ltd.", None, None],
         ],
@@ -133,7 +133,7 @@ def test_load_jobs_reads_every_nonempty_mark_and_applicant(tmp_path: Path) -> No
     jobs = load_jobs(path, inspection, overwrite=False)
 
     assert [(job.row, job.mark, job.applicant) for job in jobs] == [
-        (2, "抖音月付", "北京字跳网络技术有限公司"),
+        (2, "云杉月付", "北京云杉网络技术有限公司"),
         (4, "英文商标", "Example Holdings Ltd."),
     ]
 
@@ -143,7 +143,7 @@ def test_existing_result_is_skipped_unless_overwrite_enabled(tmp_path: Path) -> 
         tmp_path,
         "application.xlsx",
         ["商标名称", "商标申请人", "专用权期限", "截图"],
-        [["抖音月付", "北京字跳网络技术有限公司", "2023至2033", None]],
+        [["云杉月付", "北京云杉网络技术有限公司", "2023至2033", None]],
     )
     inspection = inspect_workbook(path)
 
@@ -156,7 +156,7 @@ def test_missing_required_header_has_stable_code(tmp_path: Path) -> None:
         tmp_path,
         "bad.xlsx",
         ["商标名称", "商标申请人", "截图"],
-        [["抖音月付", "北京字跳网络技术有限公司", None]],
+        [["云杉月付", "北京云杉网络技术有限公司", None]],
     )
 
     with pytest.raises(WorkbookInputError) as captured:
@@ -171,7 +171,7 @@ def test_application_row_without_applicant_is_rejected(tmp_path: Path) -> None:
         tmp_path,
         "application.xlsx",
         ["商标名称", "商标申请人", "专用权期限", "截图"],
-        [["抖音月付", None, None, None]],
+        [["云杉月付", None, None, None]],
     )
     inspection = inspect_workbook(path)
 

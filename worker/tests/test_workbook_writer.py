@@ -26,8 +26,8 @@ def make_workbook(tmp_path: Path, mode: str) -> tuple[Path, object, LookupJob]:
     sheet.title = "Sheet1"
     if mode == "application":
         sheet.append(["商标名称", "商标申请人", "专用权期限", "截图"])
-        sheet.append(["抖音月付", "输入申请人", None, None])
-        job = LookupJob.application(2, "抖音月付", "输入申请人")
+        sheet.append(["云杉月付", "输入申请人", None, None])
+        job = LookupJob.application(2, "云杉月付", "输入申请人")
         name = "商标申请.xlsx"
     else:
         sheet.append(
@@ -39,8 +39,8 @@ def make_workbook(tmp_path: Path, mode: str) -> tuple[Path, object, LookupJob]:
                 "截图",
             ]
         )
-        sheet.append(["美团月付", None, None, None, None])
-        job = LookupJob.uniqueness(2, "美团月付")
+        sheet.append(["青禾月付", None, None, None, None])
+        job = LookupJob.uniqueness(2, "青禾月付")
         name = "商标查询是否唯一性.xlsx"
     path = tmp_path / name
     workbook.save(path)
@@ -65,7 +65,7 @@ def test_application_result_writes_term_and_embeds_detail_image(
         inspection,
         job,
         RowResult.application_success(
-            "北京字跳网络技术有限公司",
+            "北京云杉网络技术有限公司",
             "2023年08月28日至2033年08月27日",
             "66227440",
         ),
@@ -74,7 +74,7 @@ def test_application_result_writes_term_and_embeds_detail_image(
 
     workbook = load_workbook(working)
     sheet = workbook["Sheet1"]
-    assert sheet["B2"].value == "北京字跳网络技术有限公司"
+    assert sheet["B2"].value == "北京云杉网络技术有限公司"
     assert sheet["C2"].value == "2023年08月28日至2033年08月27日"
     assert sheet["E1"].value == "查询结果"
     assert sheet["E2"].value == "成功"
@@ -171,7 +171,7 @@ def test_unique_result_may_write_applicant_and_term(tmp_path: Path) -> None:
         inspection,
         job,
         RowResult.uniqueness_result(
-            "是", "北京三快科技有限公司", "2025年至2035年", "90000001"
+            "是", "北京青禾科技有限公司", "2025年至2035年", "90000001"
         ),
         evidence_png(tmp_path, (800, 120)),
     )
@@ -180,7 +180,7 @@ def test_unique_result_may_write_applicant_and_term(tmp_path: Path) -> None:
     sheet = workbook["Sheet1"]
     assert [sheet.cell(2, column).value for column in range(2, 5)] == [
         "是",
-        "北京三快科技有限公司",
+        "北京青禾科技有限公司",
         "2025年至2035年",
     ]
     assert sheet.column_dimensions["C"].width >= 28

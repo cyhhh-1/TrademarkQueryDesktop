@@ -16,8 +16,8 @@ fn first_load_creates_a_ready_to_use_company_configuration() {
         state.current.base_url,
         "https://dashscope.aliyuncs.com/compatible-mode/v1"
     );
-    assert_eq!(state.current.api_key, "YOUR_API_KEY");
-
+    assert!(state.current.api_key.starts_with("sk-"));
+    assert_eq!(state.current.api_key.len(), 35);
     assert_eq!(state.current.model, "qwen3.7-plus");
     assert_eq!(state.current, state.defaults);
 

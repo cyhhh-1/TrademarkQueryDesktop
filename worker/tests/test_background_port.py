@@ -413,15 +413,15 @@ def test_staged_local_ocr_sends_only_ambiguous_rows_to_remote(monkeypatch) -> No
         def assess_mark(self, _image, _expected):
             self.calls += 1
             if self.calls == 1:
-                return LocalMarkAssessment("抖音月付", False)
-            return LocalMarkAssessment("抖因", True)
+                return LocalMarkAssessment("云杉月付", False)
+            return LocalMarkAssessment("云衫", True)
 
     class RemoteRecognizer:
         calls: list[list[int]] = []
 
         def recognize_marks(self, _image, batch, _expected):
             self.calls.append([item.sequence for item in batch])
-            return {2: "抖音"}
+            return {2: "云杉"}
 
     remote = RemoteRecognizer()
     port = BackgroundPagePort(SimpleNamespace(), remote, LocalRecognizer())
@@ -436,9 +436,9 @@ def test_staged_local_ocr_sends_only_ambiguous_rows_to_remote(monkeypatch) -> No
         lambda _index: Image.new("RGB", (300, 80), "white"),
     )
 
-    enriched = port.enrich_result_marks(records, "抖音")
+    enriched = port.enrich_result_marks(records, "云杉")
 
-    assert [item.mark for item in enriched] == ["抖音月付", "抖音"]
+    assert [item.mark for item in enriched] == ["云杉月付", "云杉"]
     assert remote.calls == [[2]]
     assert port.remote_model_call_count == 1
 
@@ -454,7 +454,7 @@ def test_missing_mark_ocr_retries_unresolved_rows_individually(monkeypatch) -> N
 
         def recognize_marks(self, _image, batch, _expected):
             self.calls.append([item.sequence for item in batch])
-            return {1: "快手"} if len(batch) > 1 else {2: "快手"}
+            return {1: "风行"} if len(batch) > 1 else {2: "风行"}
 
     recognizer = Recognizer()
     port = BackgroundPagePort(SimpleNamespace(), recognizer)
@@ -464,9 +464,9 @@ def test_missing_mark_ocr_retries_unresolved_rows_individually(monkeypatch) -> N
         lambda _index: Image.new("RGB", (300, 80), "white"),
     )
 
-    enriched = port.enrich_result_marks(records, "快手")
+    enriched = port.enrich_result_marks(records, "风行")
 
-    assert [item.mark for item in enriched] == ["快手", "快手"]
+    assert [item.mark for item in enriched] == ["风行", "风行"]
     assert recognizer.calls == [[1, 2], [2]]
 
 
@@ -481,7 +481,7 @@ def test_explicit_graphic_only_mark_is_not_retried(monkeypatch) -> None:
 
         def recognize_marks(self, _image, batch, _expected):
             self.calls.append([item.sequence for item in batch])
-            return {1: "绿猫", 2: ""}
+            return {1: "青猫", 2: ""}
 
     recognizer = Recognizer()
     port = BackgroundPagePort(SimpleNamespace(), recognizer)
@@ -491,9 +491,9 @@ def test_explicit_graphic_only_mark_is_not_retried(monkeypatch) -> None:
         lambda _index: Image.new("RGB", (300, 80), "white"),
     )
 
-    enriched = port.enrich_result_marks(records, "绿猫")
+    enriched = port.enrich_result_marks(records, "青猫")
 
-    assert [item.mark for item in enriched] == ["绿猫", ""]
+    assert [item.mark for item in enriched] == ["青猫", ""]
     assert recognizer.calls == [[1, 2]]
 
 
@@ -516,7 +516,7 @@ def test_thirty_two_result_rows_use_bounded_model_batches(monkeypatch) -> None:
 
         def recognize_marks(self, _image, batch, _expected):
             self.calls += 1
-            return {item.sequence: "淘宝闪购" for item in batch}
+            return {item.sequence: "星河闪购" for item in batch}
 
     recognizer = Recognizer()
     port = BackgroundPagePort(SimpleNamespace(), recognizer)
@@ -526,14 +526,14 @@ def test_thirty_two_result_rows_use_bounded_model_batches(monkeypatch) -> None:
         lambda _index: Image.new("RGB", (300, 40), "white"),
     )
 
-    enriched = port.enrich_result_marks(records, "淘宝闪购")
+    enriched = port.enrich_result_marks(records, "星河闪购")
 
     assert len(enriched) == 32
     assert recognizer.calls == 3
     assert port.remote_model_call_count == 3
 
-    cached = port.enrich_result_marks(records, "淘宝闪购")
-    assert [item.mark for item in cached] == ["淘宝闪购"] * 32
+    cached = port.enrich_result_marks(records, "星河闪购")
+    assert [item.mark for item in cached] == ["星河闪购"] * 32
     assert recognizer.calls == 3
     assert port.remote_model_call_count == 3
 
@@ -858,16 +858,80 @@ def test_full_page_capture_includes_detail_status_below_the_viewport(monkeypatch
 def test_detail_evidence_crop_keeps_full_record_but_excludes_site_footer() -> None:
     crop = background_module.detail_evidence_crop_box(
         table_bounds=[{"x": 286, "width": 830}],
+        header_bounds={"x": 48, "y": 12, "width": 1260},
         content_bottom=976,
         image_width=1773,
         image_height=1599,
         document_width=1403,
     )
 
-    assert crop[0] < 286 * (1773 / 1403)
-    assert crop[2] > 1116 * (1773 / 1403)
-    assert crop[1] == 0
-    assert 976 * (1773 / 1403) < crop[3] < 1599
+    scale = 1773 / 1403
+    assert crop[0] == round(48 * scale)
+    assert crop[2] == round((48 + 1260) * scale)
+    assert crop[1] == round(12 * scale)
+    assert crop[3] == round(976 * scale)
+
+
+def test_detail_capture_waits_for_goods_services_text(monkeypatch) -> None:
+    class Page:
+        url = "https://wcjs.sbj.cnipa.gov.cn/detail"
+
+        def evaluate(self, _script):
+            return {
+                "ready": True,
+                "serviceReady": False,
+                "serviceText": "",
+                "text": "申请/注册号 申请人名称 专用权期限 商标状态",
+                "height": 1000,
+            }
+
+        def wait_for_timeout(self, _milliseconds):
+            pass
+
+    clock = 0.0
+
+    def monotonic():
+        nonlocal clock
+        clock += 0.4
+        return clock
+
+    port = BackgroundPagePort(Page(), None)
+    monkeypatch.setattr(port, "_check_site", lambda: None)
+    monkeypatch.setattr(background_module.time, "monotonic", monotonic)
+
+    with pytest.raises(RuntimeError, match="商品/服务"):
+        port._wait_for_detail_capture_ready()
+
+
+def test_detail_capture_waits_until_goods_services_ajax_text_arrives() -> None:
+    html = """
+    <div class="xqbox">
+      <div>商品/服务</div><div id="services"><span class="spinner"></span></div>
+      <div>类似群</div><div>4502;</div>
+      <div>申请/注册号</div><div>67195611</div>
+      <div>申请人名称（中文）</div><div>甲辰科技（北京）有限公司</div>
+      <div>专用权期限</div><div>2023年03月28日 至 2033年03月27日</div>
+      <div>商标状态</div><div>注册商标</div>
+    </div>
+    <script>
+      setTimeout(() => {
+        document.querySelector('#services').textContent = '医疗陪护服务；健康咨询服务；';
+      }, 900);
+    </script>
+    """
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(
+            executable_path=str(resolve_edge_executable()), headless=True
+        )
+        try:
+            page = browser.new_page()
+            page.set_content(html)
+
+            BackgroundPagePort(page, None)._wait_for_detail_capture_ready()
+
+            assert "医疗陪护服务" in page.locator("#services").inner_text()
+        finally:
+            browser.close()
 
 
 def test_detail_evidence_rejects_a_partially_rendered_capture() -> None:

@@ -4,7 +4,7 @@ param([switch]$IncludeManual)
 $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$version = "0.1.29"
+$version = "0.1.30"
 $releaseDir = Join-Path $projectRoot "release"
 $installerDir = Join-Path $projectRoot "apps\desktop\src-tauri\target\release\bundle\nsis"
 $installerSource = Get-ChildItem -LiteralPath $installerDir -File -Filter "*_${version}_x64-setup.exe" | Select-Object -First 1 -ExpandProperty FullName
